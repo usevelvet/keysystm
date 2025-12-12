@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Velvet - Key System</title>
+<link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;700&display=swap" rel="stylesheet">
+
+<style>
+    body {
+        margin: 0;
+        font-family: 'Comfortaa', sans-serif;
+        background: rgb(12, 14, 22);
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .card {
+        width: 360px;
+        background: rgba(255,255,255,0.05);
+        padding: 25px;
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 0 20px rgba(0,0,0,0.4);
+        transform: translateX(50px);
+        opacity: 0;
+        animation: slideIn .7s forwards ease-out;
+    }
+
+    @keyframes slideIn {
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    h1 {
+        font-size: 22px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    input {
+        width: 100%;
+        padding: 12px;
+        border-radius: 5px;
+        border: none;
+        margin-bottom: 15px;
+        font-size: 15px;
+    }
+
+    button {
+        width: 100%;
+        padding: 12px;
+        border-radius: 5px;
+        border: none;
+        background: #4c63ff;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    button:hover {
+        background: #6f80ff;
+    }
+
+    .status {
+        margin-top: 12px;
+        text-align: center;
+        font-size: 14px;
+    }
+
+    .valid { color: #6aff8a; }
+    .invalid { color: #ff6a6a; }
+
+    .svg-icon {
+        width: 24px;
+        height: 24px;
+        vertical-align: middle;
+    }
+</style>
+</head>
+<body>
+
+<div class="card">
+    <h1>Velvet - Key System</h1>
+
+    <input id="username" placeholder="Username (8–20 chars)">
+    <input id="keyInput" placeholder="Enter Key">
+
+    <button onclick="verifyKey()">Verify Key</button>
+
+    <div id="status" class="status"></div>
+</div>
+
+<script>
+    // 🔵 Function you can call from Visual Studio backend to verify users
+    async function sendVerificationRequest(username, key) {
+        return fetch("/verify", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({username, key})
+        }).then(r => r.json());
+    }
+
+    // 🔵 Front-end validation logic
+    async function verifyKey() {
+        const username = document.getElementById("username").value.trim();
+        const key = document.getElementById("keyInput").value.trim();
+        const status = document.getElementById("status");
+
+        status.textContent = "";
+
+        // Username validation
+        if (username.length < 8 || username.length > 20) {
+            status.innerHTML = `<span class="invalid">❌ Username must be 8–20 characters.</span>`;
+            return;
+        }
+
+        try {
+            // Load registered usernames
+            const usersRes = await fetch("users.json");
+            const userList = await usersRes.json();
+
+            if (userList.includes(username)) {
+                status.innerHTML = `<span class="invalid">❌ Username already taken.</span>`;
+                return;
+            }
+
+            // Load keys
+            const keyRes = await fetch("keys.txt");
+            const keyText = await keyRes.text();
+            const keys = keyText.split(",");
+
+            if (keys.includes(key)) {
+                status.innerHTML = `<span class="valid">✔ Valid Key</span>`;
+            } else {
+                status.innerHTML = `<span class="invalid">❌ Invalid Key</span>`;
+            }
+
+        } catch (e) {
+            status.innerHTML = `<span class="invalid">⚠ Server not responding.</span>`;
+        }
+    }
+</script>
+
+</body>
+</html>
